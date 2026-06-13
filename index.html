@@ -184,6 +184,16 @@
   .einst-inhalt .pacs-knopf, .einst-inhalt .pacs-knopf-neben { margin-top: 4px; }
   .einst-info { font-size: 14px; color: var(--pacs-schrift-neben); }
   .einst-info b { color: var(--pacs-schrift-hell); font-weight: 500; }
+  /* Avatar-Editor */
+  #av-canvas { display: block; margin: 0 auto; width: min(74vw, 300px); height: min(74vw, 300px); border: 1px solid #2A3340; border-radius: 12px; background: var(--pacs-flaeche); touch-action: none; cursor: crosshair; image-rendering: pixelated; }
+  .av-palette { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
+  .av-palette button { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #2A3340; cursor: pointer; padding: 0; font-size: 12px; color: var(--pacs-schrift-neben); background: transparent; }
+  .av-palette button.an { outline: 2px solid var(--pacs-violett); outline-offset: 1px; }
+  .av-info { font-size: 13px; color: var(--pacs-schrift-neben); margin-top: 12px; min-height: 18px; text-align: center; }
+  .av-info.fehler { color: #F08080; }
+  .av-info.gut { color: var(--pacs-gruen); }
+  .av-knoepfe { display: flex; gap: 10px; margin-top: 10px; }
+  .av-knoepfe button { flex: 1; margin: 0; }
 
   .versteckt { display: none !important; }
 </style>
@@ -326,6 +336,17 @@
       <div class="einst-titel">Einstellungen</div>
     </div>
     <div class="einst-inhalt">
+      <div class="block">
+        <div class="block-titel">Dein Avatar · 1 PACS pro Pixel</div>
+        <canvas id="av-canvas" width="320" height="320"></canvas>
+        <div class="av-palette" id="av-palette"></div>
+        <div class="av-info" id="av-info">Mal als Vorschau – bezahlt wird erst beim Bestätigen.</div>
+        <div class="av-knoepfe">
+          <button class="pacs-knopf-neben" id="av-verwerfen" disabled>Verwerfen</button>
+          <button class="pacs-knopf" id="av-bestaetigen" disabled>Bestätigen</button>
+        </div>
+      </div>
+
       <div class="block">
         <div class="block-titel">Dein Name</div>
         <input class="feld" id="einst-name" placeholder="Dein Name" autocomplete="nickname">
@@ -1028,13 +1049,76 @@
     const m = $("einst-meldung"); m.textContent = t; m.className = "meldung" + (art ? " " + art : "");
     if (t && art === "gut") setTimeout(() => { if (m.textContent === t) { m.textContent = ""; m.className = "meldung"; } }, 4000);
   }
-  $("knopf-einstellungen").onclick = () => {
+  $("knopf-einstellungen").onclick = async () => {
     $("einst-name").value = (meinName && meinName !== "du") ? meinName : "";
     $("einst-email").textContent = meinEmail || "—";
     $("einst-pw1").value = ""; $("einst-pw2").value = ""; meldeEinst("");
     $("einstellungen").classList.remove("versteckt");
+    await avatarLaden();
   };
   $("einst-zurueck").onclick = () => $("einstellungen").classList.add("versteckt");
+
+  // ---- Avatar-Editor (64×64, 1 PACS pro Pixel; gleicher Avatar wie alle PaCs-Apps) ----
+  const AV_LEER = "-".repeat(4096);
+  let avBestaetigt = AV_LEER, avVorschau = AV_LEER, avWerkzeug = "1", avCtx = null, avMalt = false;
+  function avBauePalette() {
+    const pal = $("av-palette"); let html = "";
+    for (const z in FARBEN) html += '<button data-z="' + z + '" style="background:' + FARBEN[z] + '"' + (z === avWerkzeug ? ' class="an"' : '') + ' aria-label="Farbe"></button>';
+    html += '<button data-z="-" aria-label="Radierer">✕</button>';
+    pal.innerHTML = html;
+    pal.onclick = e => { const k = e.target.closest("button"); if (!k) return; avWerkzeug = k.dataset.z; [...pal.children].forEach(c => c.classList.toggle("an", c === k)); };
+  }
+  function avMale() {
+    if (!avCtx) return;
+    avCtx.clearRect(0, 0, 320, 320);
+    for (let i = 0; i < 4096; i++) { const z = avVorschau[i]; if (z === "-") continue; avCtx.fillStyle = FARBEN[z]; avCtx.fillRect((i % 64) * 5, Math.floor(i / 64) * 5, 5, 5); }
+    avCtx.strokeStyle = "rgba(255,255,255,0.06)"; avCtx.lineWidth = 1;
+    for (let g = 8; g < 64; g += 8) {
+      avCtx.beginPath(); avCtx.moveTo(g * 5 + .5, 0); avCtx.lineTo(g * 5 + .5, 320); avCtx.stroke();
+      avCtx.beginPath(); avCtx.moveTo(0, g * 5 + .5); avCtx.lineTo(320, g * 5 + .5); avCtx.stroke();
+    }
+    avInfo();
+  }
+  function avKosten() { let k = 0, anders = false; for (let i = 0; i < 4096; i++) { if (avVorschau[i] !== avBestaetigt[i]) { anders = true; if (avVorschau[i] !== "-") k++; } } return { k, anders }; }
+  function avInfo(text, art) {
+    const m = $("av-info");
+    if (text) { m.textContent = text; m.className = "av-info " + (art || ""); return; }
+    const { k, anders } = avKosten(); m.className = "av-info";
+    m.textContent = anders ? ("Vorschau: " + k + " Pixel – Bestätigen ist endgültig.") : "Mal als Vorschau – bezahlt wird erst beim Bestätigen.";
+    $("av-bestaetigen").disabled = !anders;
+    $("av-bestaetigen").textContent = (anders && k > 0) ? ("Bestätigen (" + k + " PACS)") : "Bestätigen";
+    $("av-verwerfen").disabled = !anders;
+  }
+  function avPunkt(e) {
+    const r = $("av-canvas").getBoundingClientRect();
+    const x = Math.floor((e.clientX - r.left) / r.width * 64), y = Math.floor((e.clientY - r.top) / r.height * 64);
+    if (x < 0 || x > 63 || y < 0 || y > 63) return;
+    const i = y * 64 + x; if (avVorschau[i] === avWerkzeug) return;
+    avVorschau = avVorschau.slice(0, i) + avWerkzeug + avVorschau.slice(i + 1); avMale();
+  }
+  async function avatarLaden() {
+    avCtx = $("av-canvas").getContext("2d");
+    const { data } = await sb.from("konten").select("avatar_malen").eq("id", meineId).single();
+    avBestaetigt = (data && data.avatar_malen && data.avatar_malen.length === 4096) ? data.avatar_malen : AV_LEER;
+    avVorschau = avBestaetigt; avMale();
+  }
+  $("av-canvas").addEventListener("pointerdown", e => { avMalt = true; $("av-canvas").setPointerCapture(e.pointerId); avPunkt(e); });
+  $("av-canvas").addEventListener("pointermove", e => { if (avMalt) avPunkt(e); });
+  $("av-canvas").addEventListener("pointerup", () => avMalt = false);
+  $("av-canvas").addEventListener("pointercancel", () => avMalt = false);
+  $("av-verwerfen").onclick = () => { avVorschau = avBestaetigt; avMale(); };
+  $("av-bestaetigen").onclick = async () => {
+    const { k } = avKosten(); if (!k && avVorschau === avBestaetigt) return;
+    avInfo("Einen Moment …");
+    const { data, error } = await sb.rpc("avatar_bestaetigen", { neu: avVorschau });
+    if (error) { avInfo(error.message.includes("nicht genug") ? ("Nicht genug PACS – du brauchst " + k + ".") : ("Hat nicht geklappt: " + error.message), "fehler"); return; }
+    avBestaetigt = avVorschau;
+    if (data && typeof data.stand === "number") setzeStand(data.stand);
+    avMale();
+    if (data && data.kosten > 0) avInfo(data.kosten + " PACS bezahlt – dein Avatar ist gespeichert ✓", "gut");
+    else avInfo("Avatar gespeichert ✓", "gut");
+  };
+  avBauePalette();
 
   $("einst-name-speichern").onclick = async () => {
     const name = $("einst-name").value.trim();
