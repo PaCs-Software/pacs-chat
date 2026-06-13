@@ -173,6 +173,18 @@
   .schenk-info { font-size: 13px; color: var(--pacs-schrift-neben); margin-bottom: 16px; }
   .schenk-info b { color: var(--pacs-gruen); }
 
+  /* ===== Text-Link / Einstellungen ===== */
+  .text-link { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: var(--pacs-schrift-neben); font-family: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; }
+  .text-link:hover { color: var(--pacs-schrift-hell); }
+  .einst-flaeche { position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 560px; z-index: 35; background: var(--pacs-hintergrund); display: flex; flex-direction: column; }
+  .einst-kopf { display: flex; align-items: center; gap: 8px; padding: 14px; border-bottom: 1px solid #1B232E; }
+  .einst-titel { font-size: 17px; font-weight: 500; }
+  .einst-inhalt { flex: 1; overflow-y: auto; padding: 16px; }
+  .einst-inhalt .block:first-child { margin-top: 0; }
+  .einst-inhalt .pacs-knopf, .einst-inhalt .pacs-knopf-neben { margin-top: 4px; }
+  .einst-info { font-size: 14px; color: var(--pacs-schrift-neben); }
+  .einst-info b { color: var(--pacs-schrift-hell); font-weight: 500; }
+
   .versteckt { display: none !important; }
 </style>
 </head>
@@ -191,6 +203,7 @@
       <input class="feld" type="password" id="passwort" placeholder="Passwort" autocomplete="current-password">
       <button class="pacs-knopf breit" id="knopf-anmelden">Anmelden</button>
       <button class="pacs-knopf-neben breit" id="knopf-erstellen">Konto erstellen</button>
+      <button type="button" class="text-link" id="knopf-vergessen">Passwort vergessen?</button>
       <p class="meldung" id="meldung"></p>
 
       <div class="trenner"><div></div><span>oder</span><div></div></div>
@@ -211,6 +224,7 @@
           <div class="gruss" id="gruss">Hallo!</div>
           <div class="pacs-zeile"><img src="muenze.png" alt="PACS"><span id="stand">–</span> PACS</div>
         </div>
+        <button class="mini-knopf" id="knopf-einstellungen" aria-label="Einstellungen" style="font-size:16px">⚙️</button>
         <button class="mini-knopf" id="knopf-abmelden">Abmelden</button>
       </div>
 
@@ -305,6 +319,48 @@
     </div>
   </div>
 
+  <!-- ===== Einstellungen ===== -->
+  <div class="einst-flaeche versteckt" id="einstellungen">
+    <div class="einst-kopf">
+      <button class="zurueck" id="einst-zurueck" aria-label="Zurück">‹</button>
+      <div class="einst-titel">Einstellungen</div>
+    </div>
+    <div class="einst-inhalt">
+      <div class="block">
+        <div class="block-titel">Dein Name</div>
+        <input class="feld" id="einst-name" placeholder="Dein Name" autocomplete="nickname">
+        <button class="pacs-knopf breit" id="einst-name-speichern">Namen speichern</button>
+      </div>
+
+      <div class="block">
+        <div class="block-titel">Passwort ändern</div>
+        <input class="feld" type="password" id="einst-pw1" placeholder="Neues Passwort (mind. 6 Zeichen)" autocomplete="new-password">
+        <input class="feld" type="password" id="einst-pw2" placeholder="Nochmal wiederholen" autocomplete="new-password">
+        <button class="pacs-knopf breit" id="einst-pw-speichern">Passwort ändern</button>
+        <div class="hinweis">Du kannst dein Passwort auch zurücksetzen lassen (E-Mail) – auf der Anmelde-Seite unter „Passwort vergessen?“.</div>
+      </div>
+
+      <div class="block">
+        <div class="block-titel">Konto</div>
+        <div class="einst-info">Angemeldet als <b id="einst-email">…</b></div>
+        <button class="pacs-knopf-neben breit" id="einst-abmelden" style="margin-top:10px">Abmelden</button>
+      </div>
+
+      <p class="meldung" id="einst-meldung"></p>
+    </div>
+  </div>
+
+  <!-- ===== Neues Passwort setzen (nach Zurücksetzen) ===== -->
+  <div class="schenk-flaeche versteckt" id="recovery">
+    <div class="schenk-box">
+      <div class="schenk-titel">Neues Passwort setzen</div>
+      <div class="schenk-an">Wähle ein neues Passwort für dein Konto.</div>
+      <input class="feld" type="password" id="rec-pw" placeholder="Neues Passwort (mind. 6 Zeichen)" autocomplete="new-password" style="margin-top:8px">
+      <button class="pacs-knopf breit" id="rec-speichern">Passwort speichern</button>
+      <p class="meldung" id="rec-meldung"></p>
+    </div>
+  </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   // ====== PaCs-Konto (Supabase, Frankfurt) ======
@@ -372,10 +428,11 @@
   }
 
   // ---------- Konto ----------
-  let meineId = "", meinName = "", meinCode = "", meinStand = 0;
+  let meineId = "", meinName = "", meinCode = "", meinStand = 0, meinEmail = "";
   function setzeStand(n) { meinStand = n; $("stand").textContent = n; }
   async function zeigeKonto(user) {
     meineId = user.id;
+    meinEmail = user.email || "";
     const { data: konto } = await sb.from("konten").select("*").eq("id", user.id).single();
     meinName = (konto && konto.name) || "du";
     $("gruss").textContent = "Hallo, " + meinName + "!";
@@ -959,10 +1016,71 @@
   $("knopf-abmelden").onclick = async () => {
     schliesseChat();
     stoppeMuenzen();
+    $("einstellungen").classList.add("versteckt");
     if (empfangKanal) { sb.removeChannel(empfangKanal); empfangKanal = null; }
     for (const k in schluesselCache) delete schluesselCache[k];
     await sb.auth.signOut();
     $("konto").classList.add("versteckt"); $("anmeldung").classList.remove("versteckt"); melde("");
+  };
+
+  // ============ EINSTELLUNGEN ============
+  function meldeEinst(t, art) {
+    const m = $("einst-meldung"); m.textContent = t; m.className = "meldung" + (art ? " " + art : "");
+    if (t && art === "gut") setTimeout(() => { if (m.textContent === t) { m.textContent = ""; m.className = "meldung"; } }, 4000);
+  }
+  $("knopf-einstellungen").onclick = () => {
+    $("einst-name").value = (meinName && meinName !== "du") ? meinName : "";
+    $("einst-email").textContent = meinEmail || "—";
+    $("einst-pw1").value = ""; $("einst-pw2").value = ""; meldeEinst("");
+    $("einstellungen").classList.remove("versteckt");
+  };
+  $("einst-zurueck").onclick = () => $("einstellungen").classList.add("versteckt");
+
+  $("einst-name-speichern").onclick = async () => {
+    const name = $("einst-name").value.trim();
+    if (name.length < 1) { meldeEinst("Bitte einen Namen eingeben.", "fehler"); return; }
+    $("einst-name-speichern").disabled = true;
+    const { error } = await sb.from("konten").update({ name }).eq("id", meineId);
+    $("einst-name-speichern").disabled = false;
+    if (error) { meldeEinst("Ändern hat nicht geklappt: " + error.message, "fehler"); return; }
+    meinName = name; $("gruss").textContent = "Hallo, " + name + "!";
+    meldeEinst("Name gespeichert ✓", "gut");
+  };
+
+  $("einst-pw-speichern").onclick = async () => {
+    const a = $("einst-pw1").value, b = $("einst-pw2").value;
+    if (a.length < 6) { meldeEinst("Das Passwort braucht mindestens 6 Zeichen.", "fehler"); return; }
+    if (a !== b) { meldeEinst("Die zwei Passwörter sind nicht gleich.", "fehler"); return; }
+    $("einst-pw-speichern").disabled = true;
+    const { error } = await sb.auth.updateUser({ password: a });
+    $("einst-pw-speichern").disabled = false;
+    if (error) { meldeEinst("Hat nicht geklappt: " + error.message, "fehler"); return; }
+    $("einst-pw1").value = ""; $("einst-pw2").value = "";
+    meldeEinst("Passwort geändert ✓", "gut");
+  };
+
+  $("einst-abmelden").onclick = () => { $("einstellungen").classList.add("versteckt"); $("knopf-abmelden").onclick(); };
+
+  // Passwort vergessen (Anmelde-Seite) -> Reset-Mail
+  $("knopf-vergessen").onclick = async () => {
+    const email = $("email").value.trim();
+    if (!email) { melde("Tipp oben deine E-Mail ein, dann schick ich dir einen Link.", "fehler"); $("email").focus(); return; }
+    melde("E-Mail wird verschickt …");
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.href.split("#")[0] });
+    if (error) { melde("Hat nicht geklappt: " + error.message, "fehler"); return; }
+    melde("Schau in deine E-Mails – wir haben dir einen Link zum Zurücksetzen geschickt. 📧", "gut");
+  };
+
+  // Neues Passwort setzen (nach Klick auf den Reset-Link)
+  $("rec-speichern").onclick = async () => {
+    const pw = $("rec-pw").value, m = $("rec-meldung");
+    if (pw.length < 6) { m.textContent = "Mindestens 6 Zeichen."; m.className = "meldung fehler"; return; }
+    $("rec-speichern").disabled = true;
+    const { error } = await sb.auth.updateUser({ password: pw });
+    $("rec-speichern").disabled = false;
+    if (error) { m.textContent = "Hat nicht geklappt: " + error.message; m.className = "meldung fehler"; return; }
+    m.textContent = "Passwort gesetzt ✓"; m.className = "meldung gut";
+    setTimeout(() => $("recovery").classList.add("versteckt"), 1200);
   };
 
   // ---------- Apple / Google ----------
@@ -983,7 +1101,15 @@
     if (error) melde("Google-Anmeldung hat nicht geklappt: " + error.message, "fehler");
   };
 
-  sb.auth.onAuthStateChange((ereignis, sitzung) => { setTimeout(() => { if (sitzung && sitzung.user) zeigeKonto(sitzung.user); }, 0); });
+  sb.auth.onAuthStateChange((ereignis, sitzung) => {
+    setTimeout(() => {
+      if (sitzung && sitzung.user) zeigeKonto(sitzung.user);
+      if (ereignis === "PASSWORD_RECOVERY") {
+        $("rec-pw").value = ""; $("rec-meldung").textContent = "";
+        $("recovery").classList.remove("versteckt");
+      }
+    }, 0);
+  });
 
   // ============ INSTALLIEREN (PWA) ============
   if ("serviceWorker" in navigator) {
