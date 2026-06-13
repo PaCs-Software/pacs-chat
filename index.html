@@ -362,6 +362,14 @@
       </div>
 
       <div class="block">
+        <div class="block-titel">Benachrichtigungen</div>
+        <div class="einst-info" id="push-status" style="margin-bottom:10px">…</div>
+        <button class="pacs-knopf breit" id="push-an">🔔 Benachrichtigungen einschalten</button>
+        <button class="pacs-knopf-neben breit versteckt" id="push-aus" style="margin-top:8px">Ausschalten</button>
+        <div class="hinweis">Du wirst benachrichtigt, wenn dir jemand schreibt – auch wenn die App zu ist. Der Inhalt bleibt geheim (es steht nur „Neue Nachricht von …“). Auf dem iPhone nur als installierte App.</div>
+      </div>
+
+      <div class="block">
         <div class="block-titel">Konto</div>
         <div class="einst-info">Angemeldet als <b id="einst-email">…</b></div>
         <button class="pacs-knopf-neben breit" id="einst-abmelden" style="margin-top:10px">Abmelden</button>
@@ -1054,6 +1062,7 @@
     $("einst-email").textContent = meinEmail || "—";
     $("einst-pw1").value = ""; $("einst-pw2").value = ""; meldeEinst("");
     $("einstellungen").classList.remove("versteckt");
+    pushStatus();
     await avatarLaden();
   };
   $("einst-zurueck").onclick = () => $("einstellungen").classList.add("versteckt");
@@ -1119,6 +1128,52 @@
     else avInfo("Avatar gespeichert ✓", "gut");
   };
   avBauePalette();
+
+  // ============ BENACHRICHTIGUNGEN (Web-Push) ============
+  const VAPID_PUBLIC = "BDQ8PUZaf2j0zwCSYXJPi-Rsvr4n-gOoWmMCikbPrG-rINfjVIZ8zk8AmAcMaCWEXYudA36NKpHqU7a0ITO_geI";
+  function vapidBytes(b64) {
+    const pad = "=".repeat((4 - b64.length % 4) % 4);
+    const s = (b64 + pad).replace(/-/g, "+").replace(/_/g, "/");
+    const roh = atob(s); const arr = new Uint8Array(roh.length);
+    for (let i = 0; i < roh.length; i++) arr[i] = roh.charCodeAt(i);
+    return arr;
+  }
+  const pushMoeglich = () => ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window);
+  async function pushStatus() {
+    const st = $("push-status"), an = $("push-an"), aus = $("push-aus");
+    if (!pushMoeglich()) { st.textContent = "Dein Gerät unterstützt das hier leider nicht. (iPhone: nur als installierte App.)"; an.classList.add("versteckt"); aus.classList.add("versteckt"); return; }
+    if (Notification.permission === "denied") { st.textContent = "Benachrichtigungen sind in den Geräte-Einstellungen blockiert."; an.classList.add("versteckt"); aus.classList.add("versteckt"); return; }
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) { st.textContent = "Eingeschaltet ✓ – du wirst bei neuen Nachrichten benachrichtigt."; an.classList.add("versteckt"); aus.classList.remove("versteckt"); }
+      else { st.textContent = "Noch aus."; an.classList.remove("versteckt"); aus.classList.add("versteckt"); }
+    } catch (e) { st.textContent = "Noch aus."; an.classList.remove("versteckt"); aus.classList.add("versteckt"); }
+  }
+  $("push-an").onclick = async () => {
+    if (!pushMoeglich()) return;
+    $("push-an").disabled = true;
+    try {
+      const erlaubnis = await Notification.requestPermission();
+      if (erlaubnis !== "granted") { meldeEinst("Du hast Benachrichtigungen nicht erlaubt.", "fehler"); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidBytes(VAPID_PUBLIC) });
+      const { error } = await sb.from("push_abos").upsert({ user_id: meineId, subscription: sub.toJSON() }, { onConflict: "user_id,endpoint" });
+      if (error) { meldeEinst("Konnte nicht aktivieren: " + error.message, "fehler"); return; }
+      meldeEinst("Benachrichtigungen eingeschaltet 🔔", "gut");
+      pushStatus();
+    } catch (e) { meldeEinst("Hat nicht geklappt: " + (e.message || e), "fehler"); }
+    finally { $("push-an").disabled = false; }
+  };
+  $("push-aus").onclick = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) { const ep = sub.endpoint; await sub.unsubscribe(); await sb.from("push_abos").delete().eq("user_id", meineId).eq("endpoint", ep); }
+      meldeEinst("Benachrichtigungen ausgeschaltet.", "gut");
+      pushStatus();
+    } catch (e) { meldeEinst("Hat nicht geklappt: " + (e.message || e), "fehler"); }
+  };
 
   $("einst-name-speichern").onclick = async () => {
     const name = $("einst-name").value.trim();

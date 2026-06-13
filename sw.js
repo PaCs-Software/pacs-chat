@@ -1,5 +1,22 @@
 // PaCs-Chat · Service Worker (macht die App installierbar + lädt das Gerüst schnell)
-const CACHE = "pacs-chat-v5";
+const CACHE = "pacs-chat-v6";
+
+// ---- Push-Mitteilungen empfangen ----
+self.addEventListener("push", e => {
+  let d = { title: "PaCs-Chat", body: "Neue Nachricht" };
+  try { d = e.data.json(); } catch (_) {}
+  e.waitUntil(self.registration.showNotification(d.title || "PaCs-Chat", {
+    body: d.body || "Neue Nachricht",
+    icon: "icon-192.png", badge: "icon-192.png", tag: "pacs-chat"
+  }));
+});
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(cs => {
+    for (const c of cs) { if ("focus" in c) return c.focus(); }
+    if (self.clients.openWindow) return self.clients.openWindow("./");
+  }));
+});
 const SCHALE = [
   "./", "./index.html", "./stil.css",
   "./logo.png", "./muenze.png",
