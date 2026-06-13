@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PaCs-Chat</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B0F14">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PaCs-Chat">
+<link rel="stylesheet" href="stil.css">
+<style>
+  html, body { margin: 0; padding: 0; min-height: 100%; }
+  body.pacs-seite { min-height: 100vh; }
+  .huelle { position: relative; max-width: 420px; margin: 0 auto; padding: 28px 18px 40px; box-sizing: border-box; }
+
+  .karte { position: relative; text-align: center; }
+  #anmeldung { max-width: 360px; margin: 6vh auto 0; }
+  .logo { width: 84px; height: auto; margin-bottom: 8px; filter: invert(1); }
+  h1 { font-size: 22px; font-weight: 500; margin: 0 0 8px; }
+  .unter { font-size: 14px; color: var(--pacs-schrift-neben); line-height: 1.5; margin: 0 0 26px; }
+
+  .feld {
+    width: 100%; box-sizing: border-box;
+    background: var(--pacs-flaeche); border: 1px solid #2A3340; border-radius: 8px;
+    color: var(--pacs-schrift-hell); font-size: 15px; font-family: inherit;
+    padding: 12px 14px; margin-bottom: 10px;
+  }
+  .feld::placeholder { color: var(--pacs-schrift-gedaempft); }
+  .feld:focus { outline: none; border-color: var(--pacs-rand-grauviolett); }
+
+  .pacs-knopf.breit, .pacs-knopf-neben.breit { width: 100%; box-sizing: border-box; }
+  .pacs-knopf.breit { margin-top: 8px; }
+  .pacs-knopf-neben.breit { margin-top: 10px; }
+  .pacs-knopf:disabled, .pacs-knopf-neben:disabled { opacity: .35; cursor: default; }
+  .meldung { min-height: 20px; font-size: 13px; margin: 12px 0 0; color: var(--pacs-schrift-neben); }
+  .meldung.fehler { color: #F08080; }
+  .meldung.gut { color: var(--pacs-gruen); }
+
+  /* ===== Apple / Google ===== */
+  .trenner { display: flex; align-items: center; gap: 10px; margin: 18px 0 14px; }
+  .trenner div { flex: 1; height: 1px; background: #1F2630; }
+  .trenner span { font-size: 12px; color: var(--pacs-schrift-gedaempft); }
+  .sozial { display: flex; gap: 10px; margin-bottom: 10px; }
+  .sozial button {
+    flex: 1; background: var(--pacs-flaeche); border: 1px solid #2A3340; border-radius: 8px;
+    color: var(--pacs-schrift-hell); font-size: 14px; font-family: inherit; padding: 11px; cursor: pointer;
+  }
+  .sozial button:hover { border-color: var(--pacs-rand-grauviolett); }
+
+  /* ===== Kopfzeile ===== */
+  .kopfzeile { display: flex; align-items: center; gap: 12px; text-align: left; margin-bottom: 18px; }
+  .logo-klein { width: 40px; height: 40px; filter: invert(1); flex-shrink: 0; }
+  .kopf-text { flex: 1; }
+  .kopf-text .gruss { font-size: 18px; font-weight: 500; }
+  .pacs-zeile { font-size: 13px; color: var(--pacs-schrift-neben); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+  .pacs-zeile img { width: 16px; height: 16px; }
+  .mini-knopf {
+    background: transparent; border: 1px solid var(--pacs-rand-graugruen); border-radius: 8px;
+    color: var(--pacs-schrift-neben); font-size: 12px; font-family: inherit; padding: 7px 12px; cursor: pointer;
+  }
+
+  /* ===== Blöcke ===== */
+  .block { text-align: left; background: rgba(255,255,255,0.02); border: 1px solid #1B232E; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .block-titel { font-size: 13px; font-weight: 500; color: var(--pacs-schrift-neben); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .hinweis { font-size: 12px; color: var(--pacs-schrift-gedaempft); margin-top: 8px; line-height: 1.5; }
+
+  .code-zeile { display: flex; align-items: center; gap: 10px; }
+  .code-gross { flex: 1; font-size: 20px; font-weight: 500; letter-spacing: 1px; background: var(--pacs-flaeche); border: 1px solid #2A3340; border-radius: 8px; padding: 10px 14px; color: var(--pacs-schrift-hell); }
+  .code-zeile .pacs-knopf-neben { margin: 0; white-space: nowrap; }
+
+  /* ===== Person-Zeile ===== */
+  .person { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1B232E; }
+  .person:last-child { border-bottom: none; }
+  .person.klickbar { cursor: pointer; }
+  .person.klickbar:hover { background: rgba(255,255,255,0.02); }
+  .avatar { width: 42px; height: 42px; border-radius: 11px; overflow: hidden; flex-shrink: 0; }
+  .avatar canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+  .avatar-leer { display: flex; align-items: center; justify-content: center; background: var(--pacs-flaeche); border: 1px solid #2A3340; color: var(--pacs-violett); font-size: 18px; font-weight: 500; }
+  .person-info { flex: 1; min-width: 0; }
+  .person-name { font-size: 15px; }
+  .person-code { font-size: 12px; color: var(--pacs-schrift-gedaempft); }
+  .person-tat { display: flex; gap: 8px; flex-shrink: 0; }
+  .person-tat button { font-size: 12px; padding: 8px 12px; margin: 0; }
+  .leer { font-size: 13px; color: var(--pacs-schrift-gedaempft); padding: 6px 0; }
+
+  /* ===== Chat (Vollbild) ===== */
+  .chat-flaeche {
+    position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 560px; z-index: 20;
+    background: var(--pacs-hintergrund); display: flex; flex-direction: column;
+  }
+  .chat-kopf { display: flex; align-items: center; gap: 12px; padding: 14px 14px; border-bottom: 1px solid #1B232E; background: rgba(13,17,23,0.7); }
+  .chat-kopf .avatar { width: 38px; height: 38px; }
+  .zurueck { background: transparent; border: none; color: var(--pacs-schrift-hell); font-size: 28px; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .chat-kopf-name { font-size: 16px; font-weight: 500; }
+  .chat-verlauf { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 7px; }
+  .blase { max-width: 76%; padding: 9px 13px; border-radius: 15px; font-size: 15px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
+  .blase .zeit { display: block; font-size: 10px; color: var(--pacs-schrift-gedaempft); margin-top: 3px; text-align: right; }
+  .blase.du { align-self: flex-start; background: var(--pacs-flaeche); border: 1px solid #2A3340; border-bottom-left-radius: 5px; }
+  .blase.ich { align-self: flex-end; background: rgba(52,211,153,0.14); border: 1px solid rgba(52,211,153,0.35); border-bottom-right-radius: 5px; }
+  .blase.medium { padding: 5px; }
+  .chat-bild { max-width: 220px; max-height: 260px; border-radius: 10px; display: block; cursor: pointer; }
+  .chat-video { max-width: 240px; max-height: 280px; border-radius: 10px; display: block; }
+  .chat-datei { display: flex; align-items: center; gap: 8px; color: var(--pacs-schrift-hell); text-decoration: none; font-size: 14px; padding: 6px 8px; }
+  .chat-datei .datei-symbol { font-size: 20px; }
+  .chat-datei .datei-text { text-decoration: underline; }
+  .chat-leer { margin: auto; text-align: center; color: var(--pacs-schrift-gedaempft); font-size: 14px; line-height: 1.6; }
+  .chat-eingabe { display: flex; gap: 8px; align-items: center; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid #1B232E; }
+  .chat-eingabe .feld { margin: 0; flex: 1; }
+  .chat-eingabe .pacs-knopf { margin: 0; white-space: nowrap; }
+  .anhang { flex-shrink: 0; width: 44px; height: 44px; background: transparent; border: 1px solid var(--pacs-rand-graugruen); border-radius: 8px; color: var(--pacs-schrift-neben); font-size: 20px; line-height: 1; cursor: pointer; padding: 0; }
+  .anhang:hover { border-color: var(--pacs-rand-grauviolett); color: var(--pacs-schrift-hell); }
+
+  /* ===== Live-Vorschau (Freund malt gerade) ===== */
+  .mal-live { align-self: flex-start; max-width: 76%; }
+  .mal-live .titel { font-size: 12px; color: var(--pacs-violett); margin-bottom: 4px; }
+  .mal-live canvas { width: 200px; height: 200px; border-radius: 12px; border: 1px solid var(--pacs-rand-grauviolett); background: #fff; display: block; }
+
+  /* ===== Mal-Pad ===== */
+  .malpad-flaeche {
+    position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 560px; z-index: 30;
+    background: var(--pacs-hintergrund); display: flex; flex-direction: column;
+  }
+  .malpad-kopf { display: flex; align-items: center; gap: 12px; padding: 14px; border-bottom: 1px solid #1B232E; }
+  .malpad-titel { flex: 1; font-size: 16px; font-weight: 500; }
+  .malpad-titel span { color: var(--pacs-schrift-neben); font-size: 13px; }
+  .malpad-kopf .pacs-knopf { margin: 0; }
+  .malpad-buehne { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #mal-canvas { width: min(86vw, 360px); height: min(86vw, 360px); border-radius: 14px; background: #fff; border: 1px solid #2A3340; touch-action: none; cursor: crosshair; image-rendering: auto; }
+  .malpad-werkzeug { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid #1B232E; }
+  .modus-schalter { display: flex; gap: 8px; margin-bottom: 12px; }
+  .modus { flex: 1; background: var(--pacs-flaeche); border: 1px solid #2A3340; border-radius: 8px; color: var(--pacs-schrift-neben); font-family: inherit; font-size: 14px; padding: 9px; cursor: pointer; }
+  .modus.an { border-color: var(--pacs-violett); color: var(--pacs-schrift-hell); }
+  .palette { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
+  .palette button { width: 30px; height: 30px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; padding: 0; }
+  .palette button.an { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+  .dicke-reihe { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .dicke-label { font-size: 13px; color: var(--pacs-schrift-neben); }
+  #mal-dicke { flex: 1; accent-color: var(--pacs-violett); }
+  #mal-leeren { width: 100%; }
+
+  /* ===== PACS-Münze (ploppt auf) ===== */
+  .muenze-pop { position: fixed; z-index: 50; width: 60px; height: 60px; cursor: pointer; border: none; background: none; padding: 0;
+    animation: muenze-rein .4s cubic-bezier(.2,1.4,.5,1) both; filter: drop-shadow(0 0 12px rgba(232,195,90,0.7)); }
+  .muenze-pop img { width: 100%; height: 100%; display: block; animation: muenze-wackel 1.6s ease-in-out infinite; }
+  @keyframes muenze-rein { from { transform: scale(0) rotate(-30deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+  @keyframes muenze-wackel { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+  .muenze-weg { animation: muenze-raus .35s ease forwards !important; }
+  @keyframes muenze-raus { to { transform: scale(1.7); opacity: 0; } }
+  .plus-eins { position: fixed; z-index: 51; pointer-events: none; color: var(--pacs-gruen); font-weight: 700; font-size: 20px;
+    text-shadow: 0 0 10px rgba(52,211,153,0.6); animation: plus-hoch 1s ease forwards; }
+  @keyframes plus-hoch { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-50px); opacity: 0; } }
+
+  /* ===== PACS-Geschenk im Chat ===== */
+  .blase.geschenk { align-self: center; background: linear-gradient(135deg, rgba(232,195,90,0.18), rgba(167,139,250,0.18)); border: 1px solid #E8C35A; }
+  .blase.geschenk .gtext { display: flex; align-items: center; gap: 8px; justify-content: center; font-size: 15px; }
+  .blase.geschenk img { width: 22px; height: 22px; }
+
+  /* ===== Schenken-Fenster ===== */
+  .schenk-flaeche { position: fixed; inset: 0; z-index: 40; background: rgba(5,8,11,0.7); display: flex; align-items: center; justify-content: center; }
+  .schenk-box { background: var(--pacs-flaeche); border: 1px solid var(--pacs-rand-grauviolett); border-radius: 16px; padding: 26px 24px; width: min(88vw, 320px); text-align: center; }
+  .schenk-titel { font-size: 18px; font-weight: 500; }
+  .schenk-an { font-size: 13px; color: var(--pacs-schrift-neben); margin-bottom: 14px; }
+  .schenk-muenze { width: 56px; height: 56px; }
+  .schenk-menge { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 14px 0 8px; }
+  .schenk-menge button { width: 44px; height: 44px; border-radius: 10px; background: var(--pacs-hintergrund); border: 1px solid #2A3340; color: var(--pacs-schrift-hell); font-size: 24px; cursor: pointer; }
+  #schenk-zahl { font-size: 30px; font-weight: 700; min-width: 60px; display: inline-block; color: #E8C35A; }
+  .schenk-info { font-size: 13px; color: var(--pacs-schrift-neben); margin-bottom: 16px; }
+  .schenk-info b { color: var(--pacs-gruen); }
+
+  .versteckt { display: none !important; }
+</style>
+</head>
+<body class="pacs-seite">
+  <div class="pacs-fleck-violett"></div>
+  <div class="pacs-fleck-gruen"></div>
+
+  <div class="huelle">
+
+    <!-- ===== Anmeldung ===== -->
+    <main class="karte" id="anmeldung">
+      <img class="logo" src="logo.png" alt="PaCs-Logo">
+      <h1>PaCs-Chat</h1>
+      <p class="unter">Schreib mit deinen Freunden –<br>mit deinem PaCs-Konto.</p>
+      <input class="feld" type="email" id="email" placeholder="E-Mail" autocomplete="email">
+      <input class="feld" type="password" id="passwort" placeholder="Passwort" autocomplete="current-password">
+      <button class="pacs-knopf breit" id="knopf-anmelden">Anmelden</button>
+      <button class="pacs-knopf-neben breit" id="knopf-erstellen">Konto erstellen</button>
+      <p class="meldung" id="meldung"></p>
+
+      <div class="trenner"><div></div><span>oder</span><div></div></div>
+      <div class="sozial">
+        <button type="button" id="knopf-apple"> Mit Apple anmelden</button>
+      </div>
+      <div class="sozial">
+        <button type="button" id="knopf-google">ⓖ Mit Google anmelden</button>
+      </div>
+    </main>
+
+    <!-- ===== Nach Anmeldung ===== -->
+    <main class="karte versteckt" id="konto">
+      <div class="kopfzeile">
+        <img class="logo-klein" src="logo.png" alt="PaCs">
+        <div class="kopf-text">
+          <div class="gruss" id="gruss">Hallo!</div>
+          <div class="pacs-zeile"><img src="muenze.png" alt="PACS"><span id="stand">–</span> PACS</div>
+        </div>
+        <button class="mini-knopf" id="knopf-abmelden">Abmelden</button>
+      </div>
+
+      <button class="pacs-knopf-neben breit versteckt" id="knopf-install" style="margin-bottom:14px">📲 Als App installieren</button>
+
+      <div class="block">
+        <div class="block-titel">Dein Freundes-Code</div>
+        <div class="code-zeile">
+          <div class="code-gross" id="mein-code">…</div>
+          <button class="pacs-knopf-neben" id="knopf-code-kopieren">Kopieren</button>
+        </div>
+        <div class="hinweis">Gib diesen Code weiter, damit dich jemand als Freund hinzufügen kann.</div>
+      </div>
+
+      <div class="block">
+        <div class="block-titel">Freund hinzufügen</div>
+        <input class="feld" id="suche" placeholder="Name oder Code (z. B. PACS-7K2M)">
+        <button class="pacs-knopf breit" id="knopf-suchen">Suchen</button>
+        <div id="such-ergebnis" style="margin-top:6px"></div>
+      </div>
+
+      <div class="block versteckt" id="block-anfragen">
+        <div class="block-titel">Anfragen an dich</div>
+        <div id="anfragen-liste"></div>
+      </div>
+
+      <div class="block">
+        <div class="block-titel">Deine Freunde · zum Schreiben antippen</div>
+        <div id="freunde-liste"><div class="leer">Noch keine Freunde – such oben jemanden.</div></div>
+      </div>
+
+      <p class="meldung" id="meldung-konto"></p>
+    </main>
+  </div>
+
+  <!-- ===== Chat (Vollbild) ===== -->
+  <div class="chat-flaeche versteckt" id="chat">
+    <div class="chat-kopf">
+      <button class="zurueck" id="chat-zurueck" aria-label="Zurück">‹</button>
+      <span id="chat-avatar-slot"></span>
+      <div class="chat-kopf-name" id="chat-name">Freund</div>
+    </div>
+    <div class="chat-verlauf" id="chat-verlauf"></div>
+    <div class="chat-eingabe">
+      <button class="anhang" id="chat-anhang" aria-label="Foto, Video oder Datei">＋</button>
+      <button class="anhang" id="chat-malen" aria-label="Bild malen">🎨</button>
+      <button class="anhang" id="chat-pacs" aria-label="PACS schenken">🪙</button>
+      <input type="file" id="datei-input" style="display:none">
+      <input class="feld" id="chat-text" placeholder="Nachricht …" autocomplete="off">
+      <button class="pacs-knopf" id="chat-senden">Senden</button>
+    </div>
+  </div>
+
+  <!-- ===== PACS schenken ===== -->
+  <div class="schenk-flaeche versteckt" id="schenken">
+    <div class="schenk-box">
+      <div class="schenk-titel">PACS schenken</div>
+      <div class="schenk-an" id="schenk-an">an Freund</div>
+      <img class="schenk-muenze" src="muenze.png" alt="PACS">
+      <div class="schenk-menge">
+        <button id="schenk-minus">−</button>
+        <span id="schenk-zahl">5</span>
+        <button id="schenk-plus">+</button>
+      </div>
+      <div class="schenk-info" id="schenk-info">Du hast <b id="schenk-stand">0</b> PACS</div>
+      <button class="pacs-knopf breit" id="schenk-senden">Schenken</button>
+      <button class="pacs-knopf-neben breit" id="schenk-abbrechen">Abbrechen</button>
+    </div>
+  </div>
+
+  <!-- ===== Mal-Pad ===== -->
+  <div class="malpad-flaeche versteckt" id="malpad">
+    <div class="malpad-kopf">
+      <button class="zurueck" id="mal-abbrechen" aria-label="Abbrechen">✕</button>
+      <div class="malpad-titel">Bild malen <span id="mal-an"></span></div>
+      <button class="pacs-knopf" id="mal-senden">Senden</button>
+    </div>
+    <div class="malpad-buehne">
+      <canvas id="mal-canvas" width="280" height="280"></canvas>
+    </div>
+    <div class="malpad-werkzeug">
+      <div class="modus-schalter">
+        <button id="modus-stift" class="modus an">✏️ Stift</button>
+        <button id="modus-pixel" class="modus">▦ Pixel</button>
+      </div>
+      <div class="palette" id="mal-palette"></div>
+      <div class="dicke-reihe" id="dicke-reihe">
+        <span class="dicke-label">Dicke</span>
+        <input type="range" id="mal-dicke" min="1" max="22" value="5">
+      </div>
+      <button class="pacs-knopf-neben" id="mal-leeren">Alles löschen</button>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  // ====== PaCs-Konto (Supabase, Frankfurt) ======
+  const PACS_URL = "https://kgfxzrtgjwhjqlhdbvky.supabase.co";
+  const PACS_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnZnh6cnRnandoanFsaGRidmt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODMwMDIsImV4cCI6MjA5Njg1OTAwMn0.Bn4NvVjMi3TOoqSuXG8UvN-rX5eNMqlRNQD4hNmf5NY";
+  const sb = supabase.createClient(PACS_URL, PACS_ANON);
+  const $ = id => document.getElementById(id);
+
+  const FARBEN = {
+    "0":"#0B0F14","1":"#F4F4F5","2":"#9CA3AF","3":"#4B5563","4":"#E24B4A","5":"#D85A30",
+    "6":"#E8C35A","7":"#34D399","8":"#1D6E4E","9":"#4FC3E8","a":"#3E7CB9","b":"#2B3B8F",
+    "c":"#A78BFA","d":"#ED93B1","e":"#7A4A21","f":"#E8B88A"
+  };
+  function avatarEl(avatar, name) {
+    const wrap = document.createElement("div");
+    wrap.className = "avatar";
+    if (avatar && avatar.length === 4096 && /[0-9a-f]/.test(avatar)) {
+      const cv = document.createElement("canvas"); cv.width = 64; cv.height = 64;
+      const ctx = cv.getContext("2d");
+      for (let i = 0; i < 4096; i++) { const z = avatar[i]; if (z === "-") continue; ctx.fillStyle = FARBEN[z] || "#000"; ctx.fillRect(i % 64, Math.floor(i / 64), 1, 1); }
+      wrap.appendChild(cv);
+    } else { wrap.classList.add("avatar-leer"); wrap.textContent = (name || "?").trim().slice(0, 1).toUpperCase(); }
+    return wrap;
+  }
+
+  function melde(text, art) { const m = $("meldung"); m.textContent = text; m.className = "meldung" + (art ? " " + art : ""); }
+  function meldeKonto(text, art) {
+    const m = $("meldung-konto"); m.textContent = text; m.className = "meldung" + (art ? " " + art : "");
+    if (text) setTimeout(() => { if (m.textContent === text) { m.textContent = ""; m.className = "meldung"; } }, 4000);
+  }
+  function deutscherFehler(f) {
+    const t = (f && f.message) || "";
+    if (t.includes("Invalid login credentials")) return "E-Mail oder Passwort stimmt nicht.";
+    if (t.includes("already registered")) return "Diese E-Mail hat schon ein Konto – melde dich oben an.";
+    if (t.includes("at least 6 characters")) return "Das Passwort braucht mindestens 6 Zeichen.";
+    if (t.includes("valid email") || t.includes("invalid format")) return "Bitte eine richtige E-Mail-Adresse eintippen.";
+    return "Das hat nicht geklappt: " + t;
+  }
+
+  // ---------- Person-Zeile ----------
+  function personZeile(p, taten, beimKlick) {
+    const z = document.createElement("div");
+    z.className = "person" + (beimKlick ? " klickbar" : "");
+    z.appendChild(avatarEl(p.avatar_malen, p.name));
+    const info = document.createElement("div");
+    info.className = "person-info";
+    info.innerHTML = '<div class="person-name"></div><div class="person-code"></div>';
+    info.querySelector(".person-name").textContent = p.name || "Freund";
+    info.querySelector(".person-code").textContent = p.freundescode || "";
+    z.appendChild(info);
+    if (taten && taten.length) {
+      const tat = document.createElement("div");
+      tat.className = "person-tat";
+      taten.forEach(t => {
+        const b = document.createElement("button");
+        b.className = t.neben ? "pacs-knopf-neben" : "pacs-knopf";
+        b.textContent = t.text;
+        b.onclick = (e) => { e.stopPropagation(); t.tu(b); };
+        tat.appendChild(b);
+      });
+      z.appendChild(tat);
+    }
+    if (beimKlick) z.onclick = () => beimKlick(p);
+    return z;
+  }
+
+  // ---------- Konto ----------
+  let meineId = "", meinName = "", meinCode = "", meinStand = 0;
+  function setzeStand(n) { meinStand = n; $("stand").textContent = n; }
+  async function zeigeKonto(user) {
+    meineId = user.id;
+    const { data: konto } = await sb.from("konten").select("*").eq("id", user.id).single();
+    meinName = (konto && konto.name) || "du";
+    $("gruss").textContent = "Hallo, " + meinName + "!";
+    setzeStand(konto ? konto.pacs : 0);
+    meinCode = (konto && konto.freundescode) || "";
+    $("mein-code").textContent = meinCode || "—";
+    $("anmeldung").classList.add("versteckt");
+    $("konto").classList.remove("versteckt");
+    ladeAnfragen(); ladeFreunde();
+    starteMuenzen();   // PACS-Münzen ploppen lassen
+    // Verschlüsselung vorbereiten, dann verpasste Nachrichten abholen + live lauschen.
+    try {
+      await initKrypto();
+      starteEmpfang();
+      await holeNeueNachrichten();
+    } catch (e) { meldeKonto("Verschlüsselung konnte nicht starten: " + e.message, "fehler"); }
+  }
+  function zeigeAnmeldung() { $("konto").classList.add("versteckt"); $("anmeldung").classList.add("versteckt"); $("anmeldung").classList.remove("versteckt"); melde(""); }
+
+  // ---------- Freunde ----------
+  async function ladeFreunde() {
+    const { data, error } = await sb.rpc("meine_freunde");
+    const liste = $("freunde-liste"); liste.innerHTML = "";
+    if (error || !data || data.length === 0) { liste.innerHTML = '<div class="leer">Noch keine Freunde – such oben jemanden.</div>'; return; }
+    data.forEach(p => liste.appendChild(personZeile(p,
+      [ { text: "Entfernen", neben: true, tu: async () => { await sb.rpc("freund_entfernen", { wer: p.id }); meldeKonto(p.name + " wurde entfernt."); ladeFreunde(); } } ],
+      (freund) => oeffneChat(freund)
+    )));
+  }
+
+  // ---------- Anfragen ----------
+  async function ladeAnfragen() {
+    const { data, error } = await sb.rpc("offene_anfragen");
+    const block = $("block-anfragen"), liste = $("anfragen-liste"); liste.innerHTML = "";
+    if (error || !data || data.length === 0) { block.classList.add("versteckt"); return; }
+    block.classList.remove("versteckt");
+    data.forEach(p => liste.appendChild(personZeile(p, [
+      { text: "Annehmen", tu: async () => { await sb.rpc("anfrage_annehmen", { von: p.id }); meldeKonto(p.name + " ist jetzt dein Freund!", "gut"); ladeAnfragen(); ladeFreunde(); } },
+      { text: "Ablehnen", neben: true, tu: async () => { await sb.rpc("anfrage_ablehnen", { von: p.id }); ladeAnfragen(); } }
+    ])));
+  }
+
+  // ---------- Suchen ----------
+  $("knopf-suchen").onclick = suchen;
+  $("suche").addEventListener("keydown", e => { if (e.key === "Enter") suchen(); });
+  async function suchen() {
+    const roh = $("suche").value.trim(); const erg = $("such-ergebnis"); erg.innerHTML = "";
+    if (!roh) return;
+    let treffer = [];
+    const codeKern = roh.toUpperCase().replace(/^PACS-?/, "");
+    if (/^[0-9A-Z]{4}$/.test(codeKern)) { const { data } = await sb.rpc("freund_per_code", { code: "PACS-" + codeKern }); treffer = data || []; }
+    if (treffer.length === 0 && roh.length >= 2) { const { data } = await sb.rpc("freunde_suchen", { suche: roh }); treffer = data || []; }
+    if (treffer.length === 0) { erg.innerHTML = '<div class="leer">Niemand gefunden. Tipp den Namen (mind. 2 Zeichen) oder den Code genau ein.</div>'; return; }
+    treffer.forEach(p => erg.appendChild(personZeile(p, [
+      { text: "Hinzufügen", tu: async (b) => {
+          b.disabled = true;
+          const { data: status, error } = await sb.rpc("anfrage_schicken", { ziel: p.id });
+          if (error) { meldeKonto("Hat nicht geklappt: " + error.message, "fehler"); b.disabled = false; return; }
+          if (status === "geschickt") { b.textContent = "Angefragt ✓"; meldeKonto("Anfrage an " + p.name + " geschickt.", "gut"); }
+          else if (status === "angenommen") { b.textContent = "Befreundet ✓"; meldeKonto(p.name + " ist jetzt dein Freund!", "gut"); ladeFreunde(); }
+          else if (status === "schon_angefragt") { b.textContent = "Bereits angefragt"; }
+          else if (status === "schon_befreundet") { b.textContent = "Schon Freunde"; }
+          ladeAnfragen();
+      } }
+    ])));
+  }
+
+  // ---------- Code kopieren ----------
+  $("knopf-code-kopieren").onclick = async () => {
+    if (!meinCode) return;
+    try { await navigator.clipboard.writeText(meinCode); meldeKonto("Code kopiert: " + meinCode, "gut"); }
+    catch { meldeKonto("Dein Code: " + meinCode); }
+  };
+
+  // ============ VERSCHLÜSSELUNG (Ende-zu-Ende) ============
+  // Geheimer Schlüssel bleibt im Gerät (IndexedDB), Klartext-Verlauf nur lokal.
+  let meinPrivKey = null;
+  const schluesselCache = {}; // partnerId -> abgeleiteter AES-Schlüssel
+
+  function idbOpen() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open("pacschat", 2);
+      r.onupgradeneeded = () => {
+        const db = r.result;
+        if (!db.objectStoreNames.contains("keys")) db.createObjectStore("keys");
+        if (!db.objectStoreNames.contains("medien")) db.createObjectStore("medien");
+      };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  async function idbGet(k, store = "keys") { const db = await idbOpen(); return new Promise((res, rej) => { const t = db.transaction(store, "readonly").objectStore(store).get(k); t.onsuccess = () => res(t.result); t.onerror = () => rej(t.error); }); }
+  async function idbPut(k, v, store = "keys") { const db = await idbOpen(); return new Promise((res, rej) => { const t = db.transaction(store, "readwrite").objectStore(store).put(v, k); t.onsuccess = () => res(); t.onerror = () => rej(t.error); }); }
+  const idbMediumGet = id => idbGet(id, "medien");
+  const idbMediumPut = (id, v) => idbPut(id, v, "medien");
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2));
+
+  const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const vonB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+  async function initKrypto() {
+    let rec = await idbGet("me");
+    if (!rec) {
+      const paar = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey"]);
+      rec = { pub: paar.publicKey, priv: paar.privateKey };
+      await idbPut("me", rec);
+    }
+    meinPrivKey = rec.priv;
+    const pubJwk = await crypto.subtle.exportKey("jwk", rec.pub);
+    await sb.rpc("setze_public_key", { pk: JSON.stringify(pubJwk) }); // immer aktuell halten
+  }
+
+  async function gemeinsamerSchluessel(partnerId) {
+    if (schluesselCache[partnerId]) return schluesselCache[partnerId];
+    const { data: pkStr } = await sb.rpc("public_key_von", { wer: partnerId });
+    if (!pkStr) throw new Error("kein-schluessel");
+    const partnerPub = await crypto.subtle.importKey("jwk", JSON.parse(pkStr), { name: "ECDH", namedCurve: "P-256" }, false, []);
+    const key = await crypto.subtle.deriveKey({ name: "ECDH", public: partnerPub }, meinPrivKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    schluesselCache[partnerId] = key;
+    return key;
+  }
+  async function verschluessle(partnerId, text) {
+    const key = await gemeinsamerSchluessel(partnerId);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(text));
+    return { chiffre: b64(ct), iv: b64(iv) };
+  }
+  async function entschluessle(partnerId, chiffre, ivB64) {
+    let key = await gemeinsamerSchluessel(partnerId);
+    try { return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: vonB64(ivB64) }, key, vonB64(chiffre))); }
+    catch (e) { // evtl. neuer Schlüssel des Partners -> einmal neu holen
+      delete schluesselCache[partnerId];
+      key = await gemeinsamerSchluessel(partnerId);
+      return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: vonB64(ivB64) }, key, vonB64(chiffre)));
+    }
+  }
+
+  // ---- Dateibytes verschlüsseln/entschlüsseln (für Medien) ----
+  async function verschluessleBytes(partnerId, bytes) {
+    const key = await gemeinsamerSchluessel(partnerId);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, bytes);
+    return { ct, iv: b64(iv) };
+  }
+  async function entschluessleBytes(partnerId, ctBuf, ivB64) {
+    let key = await gemeinsamerSchluessel(partnerId);
+    try { return await crypto.subtle.decrypt({ name: "AES-GCM", iv: vonB64(ivB64) }, key, ctBuf); }
+    catch (e) { delete schluesselCache[partnerId]; key = await gemeinsamerSchluessel(partnerId); return await crypto.subtle.decrypt({ name: "AES-GCM", iv: vonB64(ivB64) }, key, ctBuf); }
+  }
+  function groesseText(b) { b = b || 0; if (b < 1024) return b + " B"; if (b < 1048576) return Math.round(b / 1024) + " KB"; return (b / 1048576).toFixed(1) + " MB"; }
+  // Große Bilder vor dem Senden verkleinern (spart Platz, schont das Netz).
+  async function vielleichtVerkleinern(file) {
+    try {
+      const bmp = await createImageBitmap(file);
+      const max = 1600; let w = bmp.width, h = bmp.height;
+      if (w <= max && h <= max) { bmp.close && bmp.close(); return file; }
+      const s = Math.min(max / w, max / h); w = Math.round(w * s); h = Math.round(h * s);
+      const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(bmp, 0, 0, w, h); bmp.close && bmp.close();
+      return await new Promise(r => cv.toBlob(b => r(b || file), "image/jpeg", 0.85));
+    } catch { return file; }
+  }
+
+  // ---- Lokaler Verlauf (nur auf diesem Gerät) ----
+  const histKey = partnerId => "chat:" + meineId + ":" + partnerId;
+  function ladeHist(partnerId) { try { return JSON.parse(localStorage.getItem(histKey(partnerId))) || []; } catch { return []; } }
+  function fuegeHistHinzu(partnerId, m) {
+    const a = ladeHist(partnerId); a.push(m);
+    if (a.length > 2000) a.splice(0, a.length - 2000);
+    localStorage.setItem(histKey(partnerId), JSON.stringify(a));
+  }
+
+  // ============ CHAT ============
+  let aktuellerChat = null, empfangKanal = null;
+
+  function zeit(iso) { try { return new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } }
+  function scrollUnten() { const v = $("chat-verlauf"); v.scrollTop = v.scrollHeight; }
+
+  function blaseHinzufuegen(m, runterscrollen = true) {
+    const leer = $("chat-verlauf").querySelector(".chat-leer"); if (leer) leer.remove();
+    const typ = m.typ || "text";
+    const extra = typ === "text" ? "" : (typ === "pacs" ? " geschenk" : " medium");
+    const b = document.createElement("div");
+    b.className = "blase " + (m.sender === meineId ? "ich" : "du") + extra;
+    const inhalt = document.createElement("div"); inhalt.className = "blase-inhalt";
+    b.appendChild(inhalt);
+    const z = document.createElement("span"); z.className = "zeit"; z.textContent = zeit(m.gesendet); b.appendChild(z);
+    $("chat-verlauf").appendChild(b);
+    baueInhalt(inhalt, m);                 // füllt Text sofort, Medien asynchron
+    if (runterscrollen) scrollUnten();
+  }
+  async function baueInhalt(el, m) {
+    const typ = m.typ || "text";
+    if (typ === "text") { const s = document.createElement("span"); s.textContent = m.text; el.appendChild(s); return; }
+    if (typ === "pacs") {
+      const wer = m.sender === meineId ? "Du hast" : ((aktuellerChat ? aktuellerChat.name : "Freund") + " hat dir");
+      el.innerHTML = '<div class="gtext"><img src="muenze.png" alt="PACS"><span></span></div>';
+      el.querySelector("span").textContent = wer + " " + m.menge + " PACS geschenkt 🎁";
+      return;
+    }
+    const rec = m.medienId ? await idbMediumGet(m.medienId) : null;
+    if (!rec || !rec.blob) { const s = document.createElement("span"); s.style.opacity = ".6"; s.textContent = "[" + (m.name || "Medium") + " nicht mehr da]"; el.appendChild(s); return; }
+    const url = URL.createObjectURL(rec.blob);
+    if (typ === "bild") {
+      const img = document.createElement("img"); img.className = "chat-bild"; img.src = url;
+      img.onclick = () => window.open(url, "_blank"); img.onload = () => scrollUnten(); el.appendChild(img);
+    } else if (typ === "video") {
+      const v = document.createElement("video"); v.className = "chat-video"; v.src = url; v.controls = true; el.appendChild(v);
+    } else {
+      const a = document.createElement("a"); a.className = "chat-datei"; a.href = url; a.download = m.name || "datei";
+      a.innerHTML = '<span class="datei-symbol">📎</span><span class="datei-text"></span>';
+      a.querySelector(".datei-text").textContent = (m.name || "Datei") + " · " + groesseText(m.groesse);
+      el.appendChild(a);
+    }
+  }
+
+  function oeffneChat(freund) {
+    aktuellerChat = freund;
+    $("chat-name").textContent = freund.name || "Freund";
+    $("chat-avatar-slot").replaceChildren(avatarEl(freund.avatar_malen, freund.name));
+    const hist = ladeHist(freund.id);
+    $("chat-verlauf").innerHTML = "";
+    if (hist.length === 0) {
+      $("chat-verlauf").innerHTML = '<div class="chat-leer">🔒 Noch keine Nachrichten.<br>Schreib ' + (freund.name || "ihm") + ' als Erster!<br><span style="font-size:12px">Ende-zu-Ende verschlüsselt – nur ihr beide könnt mitlesen.</span></div>';
+    } else { hist.forEach(m => blaseHinzufuegen(m, false)); scrollUnten(); }
+    $("konto").classList.add("versteckt");
+    $("chat").classList.remove("versteckt");
+    startMalEmpfang(freund.id);            // live mitsehen, wenn der Freund malt
+    setTimeout(() => $("chat-text").focus(), 50);
+  }
+
+  function schliesseChat() {
+    if (malKanal) { sb.removeChannel(malKanal); malKanal = null; }
+    $("malpad").classList.add("versteckt");
+    aktuellerChat = null;
+    $("chat").classList.add("versteckt");
+    $("konto").classList.remove("versteckt");
+  }
+  $("chat-zurueck").onclick = schliesseChat;
+
+  // Verschlüsselt ein Daten-Paket (JSON) und schickt es. Gibt true/false zurück.
+  async function sendePayload(payload, partner) {
+    let paket;
+    try { paket = await verschluessle(partner.id, JSON.stringify(payload)); }
+    catch (e) {
+      meldeKonto(e.message === "kein-schluessel"
+        ? partner.name + " muss sich einmal in PaCs-Chat anmelden, dann geht's."
+        : "Verschlüsseln fehlgeschlagen.", "fehler");
+      return false;
+    }
+    const { error } = await sb.rpc("nachricht_senden", { an: partner.id, chiffre: paket.chiffre, iv: paket.iv });
+    if (error) { meldeKonto("Senden fehlgeschlagen: " + error.message, "fehler"); return false; }
+    return true;
+  }
+
+  async function sendeNachricht() {
+    const t = $("chat-text").value.trim();
+    if (!t || !aktuellerChat) return;
+    const partner = aktuellerChat;
+    $("chat-text").value = "";
+    const ok = await sendePayload({ typ: "text", text: t }, partner);
+    if (!ok) { $("chat-text").value = t; return; }
+    const m = { sender: meineId, gesendet: new Date().toISOString(), typ: "text", text: t };
+    fuegeHistHinzu(partner.id, m);
+    if (aktuellerChat && aktuellerChat.id === partner.id) blaseHinzufuegen(m);
+  }
+  $("chat-senden").onclick = sendeNachricht;
+  $("chat-text").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendeNachricht(); } });
+
+  // ---- Foto / Video / Datei senden (verschlüsselt) ----
+  // Kern: nimmt einen fertigen Blob, verschlüsselt, lädt hoch, sendet, speichert lokal.
+  async function sendeMediumKern(blob, name, mime, partner) {
+    if (blob.size > 60 * 1048576) { meldeKonto("Datei zu groß (max. 60 MB).", "fehler"); return false; }
+    const typ = mime.startsWith("image/") ? "bild" : mime.startsWith("video/") ? "video" : "datei";
+    const bytes = await blob.arrayBuffer();
+    const { ct, iv } = await verschluessleBytes(partner.id, bytes);
+    const pfad = partner.id + "/" + uuid() + ".bin";
+    const up = await sb.storage.from("chat-medien").upload(pfad, new Blob([ct]), { contentType: "application/octet-stream" });
+    if (up.error) throw up.error;
+    const ok = await sendePayload({ typ, name, mime, pfad, mIv: iv, groesse: blob.size }, partner);
+    if (!ok) { await sb.storage.from("chat-medien").remove([pfad]); return false; }
+    const medienId = uuid();
+    await idbMediumPut(medienId, { blob, mime, name });
+    const m = { sender: meineId, gesendet: new Date().toISOString(), typ, name, mime, medienId, groesse: blob.size };
+    fuegeHistHinzu(partner.id, m);
+    if (aktuellerChat && aktuellerChat.id === partner.id) blaseHinzufuegen(m);
+    return true;
+  }
+  async function sendeMedium(file) {
+    if (!file || !aktuellerChat) return;
+    const partner = aktuellerChat;
+    const mimeRoh = file.type || "application/octet-stream";
+    meldeKonto("📎 wird verschlüsselt & gesendet …");
+    try {
+      let blob = file, mime = mimeRoh, name = file.name || "datei";
+      if (mimeRoh.startsWith("image/")) { blob = await vielleichtVerkleinern(file); mime = blob.type || mime; }
+      await sendeMediumKern(blob, name, mime, partner);
+      meldeKonto("");
+    } catch (e) { meldeKonto("Senden fehlgeschlagen: " + (e.message || e), "fehler"); }
+  }
+  $("chat-anhang").onclick = () => $("datei-input").click();
+  $("datei-input").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if (f) sendeMedium(f); };
+
+  // ============ MALEN (live, verschlüsselt) ============
+  const MAL_FARBEN = ["#0B0F14","#F4F4F5","#9CA3AF","#E24B4A","#E8C35A","#34D399","#4FC3E8","#A78BFA","#ED93B1","#7A4A21"];
+  const MAL_GROESSE = 280, PIXEL_N = 28, PIXEL_Z = MAL_GROESSE / PIXEL_N;
+  let malKanal = null, malModus = "stift", malFarbe = "#0B0F14", malDicke = 5;
+  let malCtx = null, malt = false, letzterPunkt = null, sendePuffer = [], sendeTimer = null;
+
+  function pairKey(a, b) { return [a, b].sort().join(":"); }
+  function zeichneGitter(ctx) {
+    ctx.strokeStyle = "rgba(0,0,0,0.08)"; ctx.lineWidth = 1;
+    for (let i = 1; i < PIXEL_N; i++) {
+      ctx.beginPath(); ctx.moveTo(i * PIXEL_Z + .5, 0); ctx.lineTo(i * PIXEL_Z + .5, MAL_GROESSE); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * PIXEL_Z + .5); ctx.lineTo(MAL_GROESSE, i * PIXEL_Z + .5); ctx.stroke();
+    }
+  }
+  function malStrich(ctx, von, bis, farbe, dicke) {
+    ctx.strokeStyle = farbe; ctx.lineWidth = dicke; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(von[0], von[1]); ctx.lineTo(bis[0], bis[1]); ctx.stroke();
+  }
+  function malPixelZelle(ctx, cx, cy, farbe) { ctx.fillStyle = farbe; ctx.fillRect(cx * PIXEL_Z, cy * PIXEL_Z, PIXEL_Z, PIXEL_Z); }
+
+  function malenStart() {
+    if (!aktuellerChat) return;
+    $("mal-an").textContent = "→ " + (aktuellerChat.name || "Freund");
+    $("malpad").classList.remove("versteckt");
+    malCtx = $("mal-canvas").getContext("2d");
+    leereMalflaeche(false);
+    sendeMalEvent({ m: "start", modus: malModus });
+  }
+  function malenSchliessen(abbruch) { $("malpad").classList.add("versteckt"); if (abbruch) sendeMalEvent({ m: "abbruch" }); }
+  function leereMalflaeche(senden = true) {
+    malCtx.fillStyle = "#ffffff"; malCtx.fillRect(0, 0, MAL_GROESSE, MAL_GROESSE);
+    if (malModus === "pixel") zeichneGitter(malCtx);
+    if (senden) sendeMalEvent({ m: "clear", modus: malModus });
+  }
+  function malPos(e) {
+    const r = $("mal-canvas").getBoundingClientRect();
+    return [ (e.clientX - r.left) / r.width * MAL_GROESSE, (e.clientY - r.top) / r.height * MAL_GROESSE ];
+  }
+  function malStart(e) {
+    malt = true; $("mal-canvas").setPointerCapture(e.pointerId);
+    const p = malPos(e);
+    if (malModus === "pixel") { const cx = Math.floor(p[0]/PIXEL_Z), cy = Math.floor(p[1]/PIXEL_Z); malPixelZelle(malCtx, cx, cy, malFarbe); zeichneGitter(malCtx); puffere({ m:"x", c:[cx,cy], f: malFarbe }); }
+    else letzterPunkt = p;
+  }
+  function malBewege(e) {
+    if (!malt) return;
+    const p = malPos(e);
+    if (malModus === "pixel") {
+      const cx = Math.floor(p[0]/PIXEL_Z), cy = Math.floor(p[1]/PIXEL_Z);
+      malPixelZelle(malCtx, cx, cy, malFarbe); zeichneGitter(malCtx); puffere({ m:"x", c:[cx,cy], f: malFarbe });
+    } else {
+      malStrich(malCtx, letzterPunkt, p, malFarbe, malDicke);
+      puffere({ m:"p", a: letzterPunkt.map(Math.round), b: p.map(Math.round), f: malFarbe, d: malDicke });
+      letzterPunkt = p;
+    }
+  }
+  function malEnde() { if (malt) { malt = false; flushPuffer(); } }
+
+  function puffere(ev) { sendePuffer.push(ev); if (!sendeTimer) sendeTimer = setTimeout(flushPuffer, 45); }
+  function flushPuffer() {
+    sendeTimer = null;
+    if (!sendePuffer.length) return;
+    const evs = sendePuffer; sendePuffer = [];
+    sendeMalEvent({ m: "buendel", evs });
+  }
+  async function sendeMalEvent(ev) {
+    if (!malKanal || !aktuellerChat) return;
+    try { const paket = await verschluessle(aktuellerChat.id, JSON.stringify(ev)); malKanal.send({ type: "broadcast", event: "stroke", payload: paket }); } catch (e) {}
+  }
+
+  // Empfang der Live-Striche -> Vorschau-Blase
+  let livePreviewCtx = null;
+  function holeLiveCanvas() {
+    let el = $("chat-verlauf").querySelector(".mal-live");
+    if (!el) {
+      const leer = $("chat-verlauf").querySelector(".chat-leer"); if (leer) leer.remove();
+      el = document.createElement("div"); el.className = "mal-live";
+      el.innerHTML = '<div class="titel">✏️ ' + (aktuellerChat ? aktuellerChat.name : "Freund") + ' malt gerade …</div><canvas width="280" height="280"></canvas>';
+      $("chat-verlauf").appendChild(el); scrollUnten();
+      livePreviewCtx = el.querySelector("canvas").getContext("2d");
+      livePreviewCtx.fillStyle = "#fff"; livePreviewCtx.fillRect(0, 0, MAL_GROESSE, MAL_GROESSE);
+    }
+    return livePreviewCtx;
+  }
+  function entferneLiveCanvas() { const el = $("chat-verlauf").querySelector(".mal-live"); if (el) el.remove(); livePreviewCtx = null; }
+  function empfangeMalEvent(ev) {
+    if (ev.m === "start" || ev.m === "clear") {
+      const ctx = holeLiveCanvas();
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, MAL_GROESSE, MAL_GROESSE);
+      if (ev.modus === "pixel") zeichneGitter(ctx);
+      return;
+    }
+    if (ev.m === "abbruch" || ev.m === "fertig") { entferneLiveCanvas(); return; }
+    const ctx = holeLiveCanvas();
+    const liste = ev.m === "buendel" ? ev.evs : [ev];
+    for (const e of liste) {
+      if (e.m === "p") malStrich(ctx, e.a, e.b, e.f, e.d);
+      else if (e.m === "x") { malPixelZelle(ctx, e.c[0], e.c[1], e.f); zeichneGitter(ctx); }
+    }
+  }
+  function startMalEmpfang(partnerId) {
+    if (malKanal) { sb.removeChannel(malKanal); malKanal = null; }
+    malKanal = sb.channel("mal-" + pairKey(meineId, partnerId), { config: { broadcast: { self: false } } });
+    malKanal.on("broadcast", { event: "stroke" }, async ({ payload }) => {
+      try { const ev = JSON.parse(await entschluessle(partnerId, payload.chiffre, payload.iv)); empfangeMalEvent(ev); } catch (e) {}
+    }).subscribe();
+  }
+
+  async function malenSenden() {
+    if (!aktuellerChat) return;
+    const partner = aktuellerChat;
+    $("mal-senden").disabled = true; meldeKonto("🎨 wird gesendet …");
+    try {
+      const blob = await new Promise(r => $("mal-canvas").toBlob(r, "image/png"));
+      malenSchliessen(false);
+      sendeMalEvent({ m: "fertig" });
+      await sendeMediumKern(blob, "zeichnung.png", "image/png", partner);
+      meldeKonto("");
+    } catch (e) { meldeKonto("Senden fehlgeschlagen: " + (e.message || e), "fehler"); }
+    $("mal-senden").disabled = false;
+  }
+
+  function bauePalette() {
+    const pal = $("mal-palette"); pal.innerHTML = "";
+    MAL_FARBEN.forEach(f => {
+      const b = document.createElement("button"); b.style.background = f;
+      if (f === malFarbe) b.classList.add("an");
+      b.onclick = () => { malFarbe = f; [...pal.children].forEach(k => k.classList.toggle("an", k === b)); };
+      pal.appendChild(b);
+    });
+  }
+  function setzeModus(m) {
+    malModus = m;
+    $("modus-stift").classList.toggle("an", m === "stift");
+    $("modus-pixel").classList.toggle("an", m === "pixel");
+    $("dicke-reihe").style.display = m === "stift" ? "flex" : "none";
+    if (malCtx) leereMalflaeche();
+  }
+  $("chat-malen").onclick = malenStart;
+  $("mal-abbrechen").onclick = () => malenSchliessen(true);
+  $("mal-senden").onclick = malenSenden;
+  $("mal-leeren").onclick = () => leereMalflaeche();
+  $("modus-stift").onclick = () => setzeModus("stift");
+  $("modus-pixel").onclick = () => setzeModus("pixel");
+  $("mal-dicke").oninput = e => malDicke = +e.target.value;
+  $("mal-canvas").addEventListener("pointerdown", malStart);
+  $("mal-canvas").addEventListener("pointermove", malBewege);
+  $("mal-canvas").addEventListener("pointerup", malEnde);
+  $("mal-canvas").addEventListener("pointercancel", malEnde);
+  bauePalette();
+
+  // ============ PACS-MÜNZEN (ploppen auf, Schnitt ~1/min) ============
+  let muenzTimer = null;
+  function pling() {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(880, ac.currentTime);
+      o.frequency.exponentialRampToValueAtTime(1320, ac.currentTime + 0.12);
+      g.gain.setValueAtTime(0.15, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.25);
+      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.26);
+      o.onended = () => ac.close();
+    } catch (e) {}
+  }
+  function planeMuenze() {
+    const delay = Math.max(5000, -60000 * Math.log(Math.random() || 0.5)); // Poisson, Schnitt 60s
+    muenzTimer = setTimeout(() => { zeigeMuenze(); planeMuenze(); }, delay);
+  }
+  function starteMuenzen() { if (!muenzTimer) planeMuenze(); }
+  function stoppeMuenzen() { if (muenzTimer) { clearTimeout(muenzTimer); muenzTimer = null; } document.querySelectorAll(".muenze-pop").forEach(m => m.remove()); }
+  function entferneMuenze(knopf) { knopf.classList.add("muenze-weg"); setTimeout(() => knopf.remove(), 350); }
+  function plusEins(x, y) {
+    const el = document.createElement("div"); el.className = "plus-eins"; el.textContent = "+1 🪙";
+    el.style.left = (x - 14) + "px"; el.style.top = (y - 10) + "px";
+    document.body.appendChild(el); setTimeout(() => el.remove(), 1000);
+  }
+  function zeigeMuenze() {
+    if (document.hidden || !meineId) return;
+    const knopf = document.createElement("button"); knopf.className = "muenze-pop";
+    const img = document.createElement("img"); img.src = "muenze.png"; img.alt = "PACS"; knopf.appendChild(img);
+    knopf.style.left = (30 + Math.random() * Math.max(40, innerWidth - 120)) + "px";
+    knopf.style.top = (90 + Math.random() * Math.max(40, innerHeight - 260)) + "px";
+    const weg = setTimeout(() => entferneMuenze(knopf), 5000);
+    knopf.onclick = async () => {
+      clearTimeout(weg); knopf.onclick = null;
+      pling();
+      const r = knopf.getBoundingClientRect();
+      plusEins(r.left + r.width / 2, r.top);
+      entferneMuenze(knopf);
+      const { data, error } = await sb.rpc("pacs_verdienen", { menge: 1, begruendung: "Münze im Chat gefangen", app_name: "PaCs-Chat" });
+      if (!error && typeof data === "number") setzeStand(data);
+    };
+    document.body.appendChild(knopf);
+  }
+
+  // ============ PACS SCHENKEN ============
+  let schenkMenge = 5;
+  function oeffneSchenken() {
+    if (!aktuellerChat) return;
+    schenkMenge = Math.min(5, meinStand) || 1;
+    $("schenk-an").textContent = "an " + (aktuellerChat.name || "Freund");
+    $("schenk-zahl").textContent = schenkMenge;
+    $("schenk-stand").textContent = meinStand;
+    $("schenken").classList.remove("versteckt");
+  }
+  function schenkSetze(d) { schenkMenge = Math.max(1, Math.min(meinStand || 1, schenkMenge + d)); $("schenk-zahl").textContent = schenkMenge; }
+  $("chat-pacs").onclick = oeffneSchenken;
+  $("schenk-abbrechen").onclick = () => $("schenken").classList.add("versteckt");
+  $("schenk-plus").onclick = () => schenkSetze(1);
+  $("schenk-minus").onclick = () => schenkSetze(-1);
+  $("schenk-senden").onclick = async () => {
+    if (!aktuellerChat) return;
+    const partner = aktuellerChat, menge = schenkMenge;
+    if (menge > meinStand) { $("schenk-info").innerHTML = "Du hast nicht genug PACS."; return; }
+    $("schenk-senden").disabled = true;
+    const { data, error } = await sb.rpc("pacs_an_freund", { an: partner.id, menge });
+    $("schenk-senden").disabled = false;
+    if (error) { $("schenk-info").textContent = error.message.includes("genug") ? "Nicht genug PACS." : "Hat nicht geklappt."; return; }
+    if (typeof data === "number") setzeStand(data);
+    $("schenken").classList.add("versteckt");
+    await sendePayload({ typ: "pacs", menge }, partner);
+    const m = { sender: meineId, gesendet: new Date().toISOString(), typ: "pacs", menge };
+    fuegeHistHinzu(partner.id, m);
+    if (aktuellerChat && aktuellerChat.id === partner.id) blaseHinzufuegen(m);
+  };
+
+  // ---- Eingehende verschlüsselte Nachrichten: entschlüsseln, lokal speichern, vom Server löschen ----
+  async function verarbeiteEingang(row) {
+    try {
+      const klar = await entschluessle(row.sender, row.chiffre, row.iv);
+      let payload; try { payload = JSON.parse(klar); } catch { payload = { typ: "text", text: klar }; }
+      const typ = payload.typ || "text";
+      let m = { sender: row.sender, gesendet: row.gesendet, typ };
+      if (typ === "text") {
+        m.text = payload.text;
+      } else {
+        const dl = await sb.storage.from("chat-medien").download(payload.pfad);
+        if (dl.error) throw dl.error;
+        const ctBuf = await dl.data.arrayBuffer();
+        const bytes = await entschluessleBytes(row.sender, ctBuf, payload.mIv);
+        const blob = new Blob([bytes], { type: payload.mime || "application/octet-stream" });
+        const medienId = uuid();
+        await idbMediumPut(medienId, { blob, mime: payload.mime, name: payload.name });
+        m.name = payload.name; m.mime = payload.mime; m.medienId = medienId; m.groesse = payload.groesse;
+        await sb.storage.from("chat-medien").remove([payload.pfad]); // zugestellt -> Medium löschen
+      }
+      fuegeHistHinzu(row.sender, m);
+      if (aktuellerChat && aktuellerChat.id === row.sender) blaseHinzufuegen(m);
+    } catch (e) { /* nicht verarbeitbar – überspringen */ }
+    await sb.from("nachrichten").delete().eq("id", row.id); // zugestellt -> löschen
+  }
+  async function holeNeueNachrichten() { // verpasste (offline) abholen
+    const { data } = await sb.from("nachrichten").select("*").eq("empfaenger", meineId).order("gesendet");
+    if (data) for (const row of data) await verarbeiteEingang(row);
+  }
+  function starteEmpfang() {
+    if (empfangKanal) sb.removeChannel(empfangKanal);
+    empfangKanal = sb.channel("eingang")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "nachrichten" },
+          async p => { if (p.new.empfaenger === meineId) await verarbeiteEingang(p.new); })
+      .subscribe();
+  }
+
+  // ---------- Anmelden / Erstellen / Abmelden ----------
+  $("knopf-anmelden").onclick = async () => {
+    melde("Einen Moment …");
+    const { data, error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("passwort").value });
+    if (error) return melde(deutscherFehler(error), "fehler");
+    zeigeKonto(data.user);
+  };
+  $("knopf-erstellen").onclick = async () => {
+    melde("Konto wird erstellt …");
+    const { data, error } = await sb.auth.signUp({ email: $("email").value.trim(), password: $("passwort").value });
+    if (error) return melde(deutscherFehler(error), "fehler");
+    melde("Willkommen bei PaCs!", "gut");
+    if (data.user) zeigeKonto(data.user);
+  };
+  $("knopf-abmelden").onclick = async () => {
+    schliesseChat();
+    stoppeMuenzen();
+    if (empfangKanal) { sb.removeChannel(empfangKanal); empfangKanal = null; }
+    for (const k in schluesselCache) delete schluesselCache[k];
+    await sb.auth.signOut();
+    $("konto").classList.add("versteckt"); $("anmeldung").classList.remove("versteckt"); melde("");
+  };
+
+  // ---------- Apple / Google ----------
+  $("knopf-apple").onclick = async () => {
+    melde("Weiter zu Apple …");
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: "apple",
+      options: { redirectTo: window.location.href.split("#")[0] }
+    });
+    if (error) melde("Apple-Anmeldung hat nicht geklappt: " + error.message, "fehler");
+  };
+  $("knopf-google").onclick = async () => {
+    melde("Weiter zu Google …");
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.href.split("#")[0] }
+    });
+    if (error) melde("Google-Anmeldung hat nicht geklappt: " + error.message, "fehler");
+  };
+
+  sb.auth.onAuthStateChange((ereignis, sitzung) => { setTimeout(() => { if (sitzung && sitzung.user) zeigeKonto(sitzung.user); }, 0); });
+
+  // ============ INSTALLIEREN (PWA) ============
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+  const schonInstalliert = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  let installPrompt = null;
+  window.addEventListener("beforeinstallprompt", e => {
+    e.preventDefault(); installPrompt = e;
+    if (!schonInstalliert()) $("knopf-install").classList.remove("versteckt");
+  });
+  // iPhone/iPad kennt kein automatisches Prompt -> Knopf trotzdem zeigen (mit Anleitung)
+  const istApple = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (istApple && !schonInstalliert()) $("knopf-install").classList.remove("versteckt");
+  $("knopf-install").onclick = async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      installPrompt = null;
+      $("knopf-install").classList.add("versteckt");
+    } else {
+      meldeKonto("Tippe unten auf das Teilen-Symbol und dann auf „Zum Home-Bildschirm“. 📲", "gut");
+    }
+  };
+  window.addEventListener("appinstalled", () => $("knopf-install").classList.add("versteckt"));
+</script>
+</body>
+</html>
