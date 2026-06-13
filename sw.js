@@ -1,5 +1,5 @@
 // PaCs-Chat · Service Worker (macht die App installierbar + lädt das Gerüst schnell)
-const CACHE = "pacs-chat-v1";
+const CACHE = "pacs-chat-v2";
 const SCHALE = [
   "./", "./index.html", "./stil.css",
   "./logo.png", "./muenze.png",

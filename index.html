@@ -200,6 +200,7 @@
       <div class="sozial">
         <button type="button" id="knopf-google">ⓖ Mit Google anmelden</button>
       </div>
+      <button class="pacs-knopf-neben breit versteckt" id="knopf-install-an" style="margin-top:16px">📲 Diese Seite als App installieren</button>
     </main>
 
     <!-- ===== Nach Anmeldung ===== -->
@@ -989,25 +990,32 @@
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
   }
   const schonInstalliert = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const installKnoepfe = () => [$("knopf-install"), $("knopf-install-an")].filter(Boolean);
+  const zeigeInstall = (an) => installKnoepfe().forEach(k => k.classList.toggle("versteckt", !an));
   let installPrompt = null;
+  const istApple = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
   window.addEventListener("beforeinstallprompt", e => {
     e.preventDefault(); installPrompt = e;
-    if (!schonInstalliert()) $("knopf-install").classList.remove("versteckt");
+    if (!schonInstalliert()) zeigeInstall(true);
   });
   // iPhone/iPad kennt kein automatisches Prompt -> Knopf trotzdem zeigen (mit Anleitung)
-  const istApple = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (istApple && !schonInstalliert()) $("knopf-install").classList.remove("versteckt");
-  $("knopf-install").onclick = async () => {
+  if (istApple && !schonInstalliert()) zeigeInstall(true);
+
+  async function installKlick() {
     if (installPrompt) {
       installPrompt.prompt();
       await installPrompt.userChoice;
       installPrompt = null;
-      $("knopf-install").classList.add("versteckt");
+      zeigeInstall(false);
+    } else if (istApple) {
+      alert("So installierst du PaCs-Chat:\n\n1. Tippe unten auf das Teilen-Symbol  ⬆️\n2. Wähle „Zum Home-Bildschirm“\n3. Fertig – die App ist auf deinem Bildschirm!");
     } else {
-      meldeKonto("Tippe unten auf das Teilen-Symbol und dann auf „Zum Home-Bildschirm“. 📲", "gut");
+      alert("Tipp im Browser-Menü (⋮) auf „App installieren“ bzw. „Zum Startbildschirm hinzufügen“. 📲");
     }
-  };
-  window.addEventListener("appinstalled", () => $("knopf-install").classList.add("versteckt"));
+  }
+  installKnoepfe().forEach(k => k.onclick = installKlick);
+  window.addEventListener("appinstalled", () => zeigeInstall(false));
 </script>
 </body>
 </html>
